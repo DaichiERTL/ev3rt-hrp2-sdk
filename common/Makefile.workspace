@@ -114,6 +114,7 @@ endif
 ifndef from # Default local application (or uImage) file name
 from := app
 uploadimg: from := uImage
+uploadimgs: from := uImage
 endif
 ifndef to
 to := $(from)
@@ -134,6 +135,19 @@ uploadimg:
 	@curl -f --noproxy "*" -H "Content-Type: ev3rt/img" --data-binary @$(from) http://$(ip)/upload > /dev/null
 	@echo = uImage has been successfully uploaded.
 
+uploadimgs: HmacSha256Src/main
+	cp ../../base-workspace/uImage $(from)
+	HmacSha256Src/main $(from) >> $(from)
+	printf "%8.8s" $(one_time_password) >> $(from)
+	@echo = "Upload uImage file (Secure Update)"
+	@echo "  BT PAN IP: $(ip)"
+	@echo "  FILE NAME: (Local) \"$(from)\" -> (Remote) \"/uImage\""
+	@echo = "Execute cURL:"
+	@curl -f --noproxy "*" -H "Content-Type: ev3rt/img" --data-binary @$(from) http://$(ip)/upload > /dev/null
+	@echo = uImage has been successfully uploaded.
+
+HmacSha256Src/main: HmacSha256Src/main.c HmacSha256Src/sha2.c HmacSha256Src/sha2.h
+	gcc -o HmacSha256Src/main HmacSha256Src/main.c HmacSha256Src/sha2.c 
 
 clean:
 	rm -rf $(OBJDIR)
